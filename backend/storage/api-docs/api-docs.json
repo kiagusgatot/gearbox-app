@@ -1,0 +1,1964 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Gearbox API",
+        "description": "REST API untuk Sistem Booking & Manajemen Layanan Bengkel Mobil",
+        "contact": {
+            "email": "admin@gearbox.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "Local Development Server"
+        }
+    ],
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register user baru",
+                "operationId": "8e4e3cb7b46126f4696379d3c7eeb4ad",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Budi Santoso"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "budi@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "08123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Registrasi berhasil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Registrasi berhasil"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login user",
+                "operationId": "222b2625838e3c57e017987f73598fda",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "admin@gearbox.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login berhasil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login berhasil"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Email atau password salah"
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout user",
+                "operationId": "ad65cbbd4e9f201619eae184a5961a98",
+                "responses": {
+                    "200": {
+                        "description": "Logout berhasil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logout berhasil"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get data user yang sedang login",
+                "operationId": "8367feff40ba10e43187792cad3132c1",
+                "responses": {
+                    "200": {
+                        "description": "Data user berhasil diambil",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Admin Gearbox"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "admin@gearbox.com"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "example": "admin"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/bookings": {
+            "get": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get riwayat booking milik user yang login",
+                "operationId": "4535e967ef15bc76dadf1efa40192f0d",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter berdasarkan status booking",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "confirmed",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah data per halaman",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List booking milik user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "booking_code": {
+                                                        "type": "string",
+                                                        "example": "GBX-A1B2C3D4"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "pending"
+                                                    },
+                                                    "total_price": {
+                                                        "type": "number",
+                                                        "example": 150000
+                                                    },
+                                                    "notes": {
+                                                        "type": "string",
+                                                        "example": "Ganti oli synthetic"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Buat booking layanan baru",
+                "description": "Membuat booking baru. Sistem akan otomatis mengecek ketersediaan slot, menggenerate booking_code unik (GBX-XXXXXXXX), dan mencatat status history awal.",
+                "operationId": "43e6dcca842886074084b8db86af7802",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "service_id",
+                                    "schedule_id",
+                                    "vehicle_id"
+                                ],
+                                "properties": {
+                                    "service_id": {
+                                        "description": "ID layanan yang dipilih",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "schedule_id": {
+                                        "description": "ID jadwal yang dipilih — harus sesuai dengan service_id",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "vehicle_id": {
+                                        "description": "ID kendaraan milik user",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Mohon ganti dengan oli synthetic"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking berhasil dibuat",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Booking berhasil dibuat"
+                                        },
+                                        "booking": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "booking_code": {
+                                                    "type": "string",
+                                                    "example": "GBX-A1B2C3D4"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                },
+                                                "total_price": {
+                                                    "type": "number",
+                                                    "example": 150000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "422": {
+                        "description": "Jadwal penuh / tidak tersedia / validasi gagal"
+                    },
+                    "500": {
+                        "description": "Server error — transaksi dibatalkan (rollback)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/bookings/{id}": {
+            "get": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get detail booking beserta status history",
+                "operationId": "c383a28985575aa1a16f783b2f762554",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID booking",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail booking lengkap dengan status history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "booking_code": {
+                                            "type": "string",
+                                            "example": "GBX-A1B2C3D4"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "confirmed"
+                                        },
+                                        "total_price": {
+                                            "type": "number",
+                                            "example": 150000
+                                        },
+                                        "service": {
+                                            "type": "object"
+                                        },
+                                        "schedule": {
+                                            "type": "object"
+                                        },
+                                        "vehicle": {
+                                            "type": "object"
+                                        },
+                                        "status_histories": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Booking tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/bookings/{id}/cancel": {
+            "put": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Batalkan booking (hanya status pending atau confirmed)",
+                "operationId": "b3cb8c721dc6a6bb70b5c7e36bafe68f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID booking",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking berhasil dibatalkan — slot dikembalikan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Booking berhasil dibatalkan"
+                                        },
+                                        "booking": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Booking tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Booking tidak bisa dibatalkan pada status ini"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/bookings": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get semua booking (Admin)",
+                "operationId": "8caf0f2ba02055882c3f93e8cd426fd7",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter berdasarkan status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "confirmed",
+                                "in_progress",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filter berdasarkan tanggal jadwal (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "2026-05-25"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List semua booking dari semua user"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized — bukan admin"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/bookings/{id}/status": {
+            "put": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update status booking (Admin)",
+                "description": "Admin dapat mengubah status booking. Jika status diubah ke 'cancelled', slot jadwal akan dikembalikan secara otomatis.",
+                "operationId": "5ef543302135b47162954476bddcec39",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID booking",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "confirmed",
+                                        "enum": [
+                                            "confirmed",
+                                            "in_progress",
+                                            "completed",
+                                            "cancelled"
+                                        ]
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Booking dikonfirmasi, silakan datang sesuai jadwal"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status booking berhasil diupdate",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Status booking berhasil diupdate"
+                                        },
+                                        "booking": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized — bukan admin"
+                    },
+                    "404": {
+                        "description": "Booking tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reviews": {
+            "get": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Get semua review (public)",
+                "operationId": "9cfedb9e60a10482ea2d0017aa8b381d",
+                "parameters": [
+                    {
+                        "name": "service_id",
+                        "in": "query",
+                        "description": "Filter berdasarkan ID layanan",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah data per halaman",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List review dengan pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "booking_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "service_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "rating": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "comment": {
+                                                        "type": "string",
+                                                        "example": "Pelayanan sangat memuaskan!"
+                                                    },
+                                                    "user": {
+                                                        "type": "object"
+                                                    },
+                                                    "service": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 10
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Buat review untuk booking yang sudah completed",
+                "description": "Review hanya bisa dibuat untuk booking dengan status 'completed'. Setiap booking hanya bisa direview 1 kali.",
+                "operationId": "f9bf17f06508aa2dd6aecbb9771092da",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "booking_id",
+                                    "rating"
+                                ],
+                                "properties": {
+                                    "booking_id": {
+                                        "description": "ID booking yang sudah completed",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "rating": {
+                                        "description": "Rating 1-5",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "example": "Pelayanan sangat memuaskan, mekanik profesional!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Review berhasil ditambahkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Review berhasil ditambahkan"
+                                        },
+                                        "review": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "booking_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "service_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "rating": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "comment": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Booking tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Booking belum completed atau sudah pernah direview"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/reviews/{id}": {
+            "delete": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Hapus review (Admin)",
+                "operationId": "d65125ba2fe6a85f90d62e762604b2e2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID review",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review berhasil dihapus",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Review berhasil dihapus"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized — bukan admin"
+                    },
+                    "404": {
+                        "description": "Review tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/schedules": {
+            "get": {
+                "tags": [
+                    "Schedules"
+                ],
+                "summary": "Get semua jadwal layanan",
+                "operationId": "f21805e74c0fcc7937d0464ff67212bd",
+                "parameters": [
+                    {
+                        "name": "service_id",
+                        "in": "query",
+                        "description": "Filter berdasarkan ID layanan",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filter berdasarkan tanggal (format: Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "2026-05-25"
+                        }
+                    },
+                    {
+                        "name": "is_available",
+                        "in": "query",
+                        "description": "Filter berdasarkan ketersediaan slot",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah data per halaman",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List jadwal dengan pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "service_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "2026-05-25"
+                                                    },
+                                                    "start_time": {
+                                                        "type": "string",
+                                                        "example": "08:00:00"
+                                                    },
+                                                    "end_time": {
+                                                        "type": "string",
+                                                        "example": "10:00:00"
+                                                    },
+                                                    "capacity": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "booked_count": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "is_available": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 20
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/schedules/{id}": {
+            "get": {
+                "tags": [
+                    "Schedules"
+                ],
+                "summary": "Get detail jadwal layanan",
+                "operationId": "0d2db25e1750eaff76142e434442ee13",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail jadwal",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "service_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "date": {
+                                            "type": "string",
+                                            "example": "2026-05-25"
+                                        },
+                                        "start_time": {
+                                            "type": "string",
+                                            "example": "08:00:00"
+                                        },
+                                        "end_time": {
+                                            "type": "string",
+                                            "example": "10:00:00"
+                                        },
+                                        "capacity": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "booked_count": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "is_available": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Jadwal tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/api/admin/schedules": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Tambah jadwal baru (Admin)",
+                "operationId": "37ab2fe4be094791d04c5a0df9cf7f18",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "service_id",
+                                    "date",
+                                    "start_time",
+                                    "end_time",
+                                    "capacity"
+                                ],
+                                "properties": {
+                                    "service_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "date": {
+                                        "description": "Format: Y-m-d, tidak boleh lebih awal dari hari ini",
+                                        "type": "string",
+                                        "example": "2026-06-01"
+                                    },
+                                    "start_time": {
+                                        "description": "Format: H:i",
+                                        "type": "string",
+                                        "example": "08:00"
+                                    },
+                                    "end_time": {
+                                        "description": "Format: H:i, harus setelah start_time",
+                                        "type": "string",
+                                        "example": "10:00"
+                                    },
+                                    "capacity": {
+                                        "description": "Maksimal booking per slot",
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Jadwal berhasil ditambahkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Jadwal berhasil ditambahkan"
+                                        },
+                                        "schedule": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized — bukan admin"
+                    },
+                    "422": {
+                        "description": "Jadwal duplikat atau validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/schedules/{id}": {
+            "put": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update jadwal (Admin)",
+                "operationId": "e4c841501d2501cb6315fdb08933759d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "example": "2026-06-02"
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "example": "09:00"
+                                    },
+                                    "end_time": {
+                                        "type": "string",
+                                        "example": "11:00"
+                                    },
+                                    "capacity": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "is_available": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Jadwal berhasil diupdate"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Jadwal tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Hapus jadwal (Admin)",
+                "operationId": "83b3381746d7de0804af2255e9f5432c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID jadwal",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Jadwal berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Tidak bisa hapus — sudah ada booking aktif"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/services": {
+            "get": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Get semua layanan",
+                "operationId": "97de511018def32ca0ccbc800756c538",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "mesin",
+                                "kelistrikan",
+                                "bodi",
+                                "ac"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List layanan dengan pagination"
+                    }
+                }
+            }
+        },
+        "/api/services/{id}": {
+            "get": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Get detail layanan",
+                "operationId": "dce5b306a141bdec91eff8a15534d7d7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail layanan"
+                    },
+                    "404": {
+                        "description": "Layanan tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/api/admin/services": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Tambah layanan baru (Admin)",
+                "operationId": "0ee39d35a8b7bf7a58228de0ae8ae2f8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "price",
+                                    "duration_minutes",
+                                    "category"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Ganti Oli Mesin"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Penggantian oli mesin"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 150000
+                                    },
+                                    "duration_minutes": {
+                                        "type": "integer",
+                                        "example": 30
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "mesin",
+                                            "kelistrikan",
+                                            "bodi",
+                                            "ac"
+                                        ]
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Layanan berhasil ditambahkan"
+                    },
+                    "403": {
+                        "description": "Unauthorized — bukan admin"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/services/{id}": {
+            "put": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update layanan (Admin)",
+                "operationId": "92c769da3b83d63e2f94450cc5ad2f7d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Layanan berhasil diupdate"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Layanan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Hapus layanan (Admin)",
+                "operationId": "16b6b0f50ca2c7104dff94346a89fb65",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Layanan berhasil dihapus"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Layanan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vehicles": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Get kendaraan milik user yang sedang login",
+                "operationId": "043b3ce51f006f946511103cfe1c2ca1",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Jumlah data per halaman",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List kendaraan milik user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "user_id": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "plate_number": {
+                                                        "type": "string",
+                                                        "example": "B 1234 ABC"
+                                                    },
+                                                    "brand": {
+                                                        "type": "string",
+                                                        "example": "Toyota"
+                                                    },
+                                                    "model": {
+                                                        "type": "string",
+                                                        "example": "Avanza"
+                                                    },
+                                                    "year": {
+                                                        "type": "integer",
+                                                        "example": 2020
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "mobil"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Tambah kendaraan baru",
+                "operationId": "74e9ae3e5f1ee2f69f3a177820d204b9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "plate_number",
+                                    "brand",
+                                    "model",
+                                    "year",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "plate_number": {
+                                        "description": "Plat nomor unik kendaraan",
+                                        "type": "string",
+                                        "example": "B 1234 ABC"
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "example": "Toyota"
+                                    },
+                                    "model": {
+                                        "type": "string",
+                                        "example": "Avanza"
+                                    },
+                                    "year": {
+                                        "description": "Tahun kendaraan (1990 - sekarang)",
+                                        "type": "integer",
+                                        "example": 2020
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "mobil",
+                                        "enum": [
+                                            "motor",
+                                            "mobil"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Kendaraan berhasil ditambahkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kendaraan berhasil ditambahkan"
+                                        },
+                                        "vehicle": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "422": {
+                        "description": "Validasi gagal atau plat nomor sudah terdaftar"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vehicles/{vehicle}": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Get detail kendaraan milik user",
+                "operationId": "2d7291bedeeb73a49905966effb2dee4",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "description": "ID kendaraan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail kendaraan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "plate_number": {
+                                            "type": "string",
+                                            "example": "B 1234 ABC"
+                                        },
+                                        "brand": {
+                                            "type": "string",
+                                            "example": "Toyota"
+                                        },
+                                        "model": {
+                                            "type": "string",
+                                            "example": "Avanza"
+                                        },
+                                        "year": {
+                                            "type": "integer",
+                                            "example": 2020
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "example": "mobil"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Update kendaraan milik user",
+                "operationId": "82a1b2a717b16eb7e08a86288a7f8093",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "description": "ID kendaraan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "plate_number": {
+                                        "type": "string",
+                                        "example": "B 5678 XYZ"
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "example": "Honda"
+                                    },
+                                    "model": {
+                                        "type": "string",
+                                        "example": "Jazz"
+                                    },
+                                    "year": {
+                                        "type": "integer",
+                                        "example": 2022
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "motor",
+                                            "mobil"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Kendaraan berhasil diupdate"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Hapus kendaraan milik user",
+                "operationId": "495952c6402028fab9f82c080af676ad",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "description": "ID kendaraan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kendaraan berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Masukkan token dari response login",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Register, Login, Logout"
+        },
+        {
+            "name": "Services",
+            "description": "Manajemen layanan bengkel"
+        },
+        {
+            "name": "Schedules",
+            "description": "Manajemen jadwal layanan"
+        },
+        {
+            "name": "Vehicles",
+            "description": "Manajemen kendaraan user"
+        },
+        {
+            "name": "Bookings",
+            "description": "Booking layanan"
+        },
+        {
+            "name": "Reviews",
+            "description": "Review setelah servis selesai"
+        },
+        {
+            "name": "Admin",
+            "description": "Endpoint khusus admin"
+        }
+    ]
+}
