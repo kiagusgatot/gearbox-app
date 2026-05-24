@@ -8,7 +8,7 @@ class Booking extends Model
 {
     protected $fillable = [
         'user_id', 'vehicle_id', 'service_id', 'schedule_id',
-        'booking_code', 'status', 'total_price', 'notes'
+        'booking_code', 'status', 'total_price', 'notes',
     ];
 
     public function user()
@@ -39,5 +39,10 @@ class Booking extends Model
     public function review()
     {
         return $this->hasOne(Review::class);
+    }
+
+    public function partUsages()
+    {
+        return $this->hasMany(PartUsage::class);
     }
 }
