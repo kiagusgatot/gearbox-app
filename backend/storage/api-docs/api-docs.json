@@ -703,6 +703,617 @@
                 ]
             }
         },
+        "/api/vehicles/{vehicle}/compatible-parts": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Get suku cadang yang kompatibel dengan kendaraan",
+                "description": "Mencocokkan merek, model, dan tahun kendaraan dengan data vehicle_specs.",
+                "operationId": "c115486ecb2f99156ebdc811e8c9e44f",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "mesin",
+                                "kelistrikan",
+                                "bodi",
+                                "ac",
+                                "ban",
+                                "lainnya"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List part yang kompatibel"
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/parts": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List semua suku cadang (Admin)",
+                "operationId": "9f1ed8fe971a5fa0b34c83b1dc22ff3d",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List suku cadang dengan pagination"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Tambah suku cadang baru (Admin)",
+                "operationId": "be80ec6d4e6c264841eb0ce80ca890bc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "sku",
+                                    "name",
+                                    "category",
+                                    "unit",
+                                    "price"
+                                ],
+                                "properties": {
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "OLI-TOY-001"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Oli Mesin Toyota 1L"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "mesin",
+                                            "kelistrikan",
+                                            "bodi",
+                                            "ac",
+                                            "ban",
+                                            "lainnya"
+                                        ]
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "example": "Castrol",
+                                        "nullable": true
+                                    },
+                                    "unit": {
+                                        "type": "string",
+                                        "example": "liter"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 85000
+                                    },
+                                    "stock": {
+                                        "type": "integer",
+                                        "example": 50
+                                    },
+                                    "min_stock": {
+                                        "type": "integer",
+                                        "example": 10
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Part berhasil ditambahkan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal atau SKU sudah dipakai"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/parts/low-stock": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List suku cadang dengan stok di bawah minimum (Admin)",
+                "operationId": "70f7d097a3dfa048e60b4503231b3530",
+                "responses": {
+                    "200": {
+                        "description": "List part yang perlu di-restock"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/parts/{id}": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Detail suku cadang (Admin)",
+                "operationId": "75ebd940afc5063e8ea93a3a892f17d3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail part beserta riwayat stok terbaru"
+                    },
+                    "404": {
+                        "description": "Part tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update data suku cadang (Admin)",
+                "operationId": "0f0c14e0c333b27a1b2939e63a9ddbe8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "min_stock": {
+                                        "type": "integer"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Part berhasil diupdate"
+                    },
+                    "404": {
+                        "description": "Part tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Hapus suku cadang (Admin)",
+                "operationId": "c9700a152ff2a2b7434812fa0ac6c366",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Part berhasil dihapus"
+                    },
+                    "422": {
+                        "description": "Part masih digunakan di booking"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/parts/{id}/restock": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Tambah stok suku cadang (Admin)",
+                "operationId": "b3cd5b49acaa6231216f5281f7b28973",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "quantity": {
+                                        "description": "Jumlah stok yang ditambahkan",
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Restock dari supplier ABC"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Stok berhasil ditambahkan"
+                    },
+                    "404": {
+                        "description": "Part tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/bookings/{id}/parts": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Catat pemakaian suku cadang untuk booking (Admin)",
+                "description": "Dipanggil saat booking in_progress atau completed. Stok akan dikurangi otomatis dan dicatat di stock_movements.",
+                "operationId": "a3ad8b22f95d02b177d0e6b281bbacf4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID booking",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "parts"
+                                ],
+                                "properties": {
+                                    "parts": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "part_id",
+                                                "quantity"
+                                            ],
+                                            "properties": {
+                                                "part_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pemakaian part berhasil dicatat, stok dikurangi, total_price diupdate"
+                    },
+                    "422": {
+                        "description": "Stok tidak cukup"
+                    },
+                    "404": {
+                        "description": "Booking atau part tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicle-specs": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Tambah spesifikasi kendaraan baru (Admin)",
+                "operationId": "9102167a8370a4388ab5a72aed8aa978",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "brand",
+                                    "model",
+                                    "year_from"
+                                ],
+                                "properties": {
+                                    "brand": {
+                                        "type": "string",
+                                        "example": "Toyota"
+                                    },
+                                    "model": {
+                                        "type": "string",
+                                        "example": "Avanza"
+                                    },
+                                    "year_from": {
+                                        "type": "integer",
+                                        "example": 2015
+                                    },
+                                    "year_to": {
+                                        "type": "integer",
+                                        "example": 2021,
+                                        "nullable": true
+                                    },
+                                    "engine_type": {
+                                        "type": "string",
+                                        "example": "1NZ-FE",
+                                        "nullable": true
+                                    },
+                                    "transmission": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "manual",
+                                            "automatic",
+                                            "cvt",
+                                            "dct"
+                                        ]
+                                    },
+                                    "fuel_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "bensin",
+                                            "diesel",
+                                            "hybrid",
+                                            "electric"
+                                        ]
+                                    },
+                                    "part_ids": {
+                                        "description": "ID part yang kompatibel dengan spec ini",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Spec kendaraan berhasil ditambahkan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicle-specs/{id}/parts": {
+            "put": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Sync part yang kompatibel dengan spec kendaraan (Admin)",
+                "operationId": "cee6b96ec4478ab3414e669559cb9660",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "part_ids"
+                                ],
+                                "properties": {
+                                    "part_ids": {
+                                        "description": "List ID part yang kompatibel (akan menggantikan list sebelumnya)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Kompatibilitas part berhasil diupdate"
+                    },
+                    "404": {
+                        "description": "Spec tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/reviews": {
             "get": {
                 "tags": [
@@ -1633,6 +2244,10 @@
                                                     "type": {
                                                         "type": "string",
                                                         "example": "mobil"
+                                                    },
+                                                    "is_verified": {
+                                                        "type": "boolean",
+                                                        "example": false
                                                     }
                                                 },
                                                 "type": "object"
@@ -1764,7 +2379,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Detail kendaraan",
+                        "description": "Detail kendaraan beserta dokumen",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1792,6 +2407,16 @@
                                         "type": {
                                             "type": "string",
                                             "example": "mobil"
+                                        },
+                                        "is_verified": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "documents": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -1911,6 +2536,336 @@
                     },
                     "404": {
                         "description": "Kendaraan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vehicles/{vehicle}/documents": {
+            "get": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Lihat status dokumen kendaraan milik user",
+                "operationId": "171c62ee660cba126784e4f1db632042",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List dokumen beserta status verifikasi"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vehicles"
+                ],
+                "summary": "Upload dokumen kendaraan (plat nomor / STNK / KIR)",
+                "description": "User mengupload foto/scan dokumen. Satu kendaraan hanya bisa punya satu dokumen per jenis. Upload ulang akan menggantikan dokumen sebelumnya.",
+                "operationId": "b4d8a3a67c33799391c9d8736aba6bdd",
+                "parameters": [
+                    {
+                        "name": "vehicle",
+                        "in": "path",
+                        "description": "ID kendaraan",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "file"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "Jenis dokumen",
+                                        "type": "string",
+                                        "enum": [
+                                            "plat_nomor",
+                                            "stnk",
+                                            "kir"
+                                        ]
+                                    },
+                                    "file": {
+                                        "description": "File dokumen (JPG/PNG/PDF, maks 2MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Dokumen berhasil diupload, menunggu verifikasi admin"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicles/search": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Cari kendaraan berdasarkan plat nomor (Admin)",
+                "operationId": "b1debea5d286295e3c7cb652e24045b7",
+                "parameters": [
+                    {
+                        "name": "plate",
+                        "in": "query",
+                        "description": "Plat nomor kendaraan (bisa sebagian, minimal 3 karakter)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "B 1234"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data kendaraan ditemukan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Kendaraan ditemukan"
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "plate_number": {
+                                                        "type": "string",
+                                                        "example": "B 1234 ABC"
+                                                    },
+                                                    "brand": {
+                                                        "type": "string",
+                                                        "example": "Toyota"
+                                                    },
+                                                    "model": {
+                                                        "type": "string",
+                                                        "example": "Avanza"
+                                                    },
+                                                    "year": {
+                                                        "type": "integer",
+                                                        "example": 2020
+                                                    },
+                                                    "is_verified": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "owner": {
+                                                        "properties": {
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Budi Santoso"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "08123456789"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "latest_bookings": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Kendaraan tidak ditemukan"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/documents": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List semua dokumen kendaraan yang perlu diverifikasi (Admin)",
+                "operationId": "fd6e915d42203db45bb22c82755711c0",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "verified",
+                                "rejected"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List dokumen dengan pagination"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/documents/{id}/verify": {
+            "put": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Approve atau reject dokumen kendaraan (Admin)",
+                "description": "Jika semua dokumen kendaraan (plat_nomor + stnk) sudah verified, is_verified pada kendaraan otomatis menjadi true.",
+                "operationId": "a38bb279d8f0867171eb526fefec6adb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID dokumen",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "verified",
+                                        "enum": [
+                                            "verified",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "notes": {
+                                        "description": "Wajib diisi jika rejected",
+                                        "type": "string",
+                                        "example": "Dokumen jelas dan valid"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status dokumen berhasil diupdate"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Dokumen tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
                     }
                 },
                 "security": [
