@@ -17,7 +17,8 @@
 - Mengatur jadwal ketersediaan layanan
 - Memproses booking dari pelanggan
 - Tracking status servis secara real-time
-- Manajemen kendaraan pelanggan
+- Manajemen kendaraan pelanggan beserta verifikasi dokumen (plat nomor / STNK)
+- Manajemen inventory suku cadang dan sinkronisasi stok otomatis
 
 ---
 
@@ -44,18 +45,27 @@
 | Tabel | Deskripsi |
 |-------|-----------|
 | `users` | Data user dengan role admin/user |
-| `vehicles` | Kendaraan milik user |
+| `vehicles` | Kendaraan milik user beserta status verifikasi |
+| `vehicle_documents` | Dokumen kendaraan (plat nomor, STNK, KIR) untuk verifikasi |
 | `services` | Jenis layanan bengkel |
 | `service_schedules` | Jadwal ketersediaan layanan |
 | `bookings` | Data booking pelanggan |
 | `booking_status_histories` | Audit trail perubahan status booking |
 | `reviews` | Review pelanggan setelah servis selesai |
+| `parts` | Master data suku cadang (inventory) |
+| `vehicle_specs` | Spesifikasi kendaraan untuk kompatibilitas suku cadang |
+| `part_vehicle_specs` | Relasi many-to-many part ↔ vehicle_specs |
+| `stock_movements` | Audit trail pergerakan stok masuk/keluar |
+| `part_usages` | Detail suku cadang yang dipakai per booking |
 
 ### Key Design Decisions
 - **Composite unique key** pada `service_schedules` — mencegah jadwal duplikat
 - **cascadeOnDelete** pada semua Foreign Key
 - **booking_code** auto-generate format `GBX-XXXXXXXX`
 - **booking_status_histories** — audit trail lengkap setiap perubahan status
+- **vehicle_documents** — verifikasi dokumen oleh admin sebelum kendaraan dinyatakan valid
+- **stock_movements** — audit trail lengkap setiap pergerakan stok (restock, usage, correction)
+- **part_usages** — snapshot harga suku cadang saat dipakai agar tidak terpengaruh perubahan harga di masa depan
 
 ---
 
@@ -70,9 +80,8 @@
 ### Langkah Instalasi
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/kiagusgatot/gearbox-backend.git
-cd gearbox-backend
+# 1. Masuk ke folder backend (dari root monorepo)
+cd backend
 
 # 2. Install dependencies
 composer install
@@ -104,6 +113,12 @@ SESSION_DRIVER=file
 ```bash
 # Buat database gearbox_db di MySQL terlebih dahulu, lalu:
 php artisan migrate --seed
+```
+
+### Setup Storage (untuk upload dokumen)
+
+```bash
+php artisan storage:link
 ```
 
 ### Jalankan Server
@@ -173,10 +188,13 @@ php artisan l5-swagger:generate
 | Method | Endpoint | Auth | Deskripsi |
 |--------|----------|------|-----------|
 | GET | `/api/vehicles` | Token | List kendaraan milik user |
-| GET | `/api/vehicles/{id}` | Token | Detail kendaraan |
+| GET | `/api/vehicles/{id}` | Token | Detail kendaraan beserta dokumen |
 | POST | `/api/vehicles` | Token | Tambah kendaraan |
 | PUT | `/api/vehicles/{id}` | Token | Update kendaraan |
 | DELETE | `/api/vehicles/{id}` | Token | Hapus kendaraan |
+| POST | `/api/vehicles/{id}/documents` | Token | Upload dokumen (plat nomor / STNK / KIR) |
+| GET | `/api/vehicles/{id}/documents` | Token | Lihat status verifikasi dokumen |
+| GET | `/api/vehicles/{id}/compatible-parts` | Token | Part yang kompatibel dengan kendaraan |
 
 ### Bookings
 | Method | Endpoint | Auth | Deskripsi |
@@ -187,6 +205,7 @@ php artisan l5-swagger:generate
 | PUT | `/api/bookings/{id}/cancel` | Token | Batalkan booking |
 | GET | `/api/admin/bookings` | Admin | Semua booking |
 | PUT | `/api/admin/bookings/{id}/status` | Admin | Update status booking |
+| POST | `/api/admin/bookings/{id}/parts` | Admin | Catat pemakaian suku cadang + sync stok |
 
 ### Reviews
 | Method | Endpoint | Auth | Deskripsi |
@@ -194,6 +213,26 @@ php artisan l5-swagger:generate
 | GET | `/api/reviews` | — | List review (filter: service_id) |
 | POST | `/api/reviews` | Token | Buat review (booking harus completed) |
 | DELETE | `/api/admin/reviews/{id}` | Admin | Hapus review |
+
+### Verifikasi Dokumen (Admin)
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/admin/vehicles/search` | Admin | Cari kendaraan by plat nomor |
+| GET | `/api/admin/documents` | Admin | List semua dokumen (filter: status) |
+| PUT | `/api/admin/documents/{id}/verify` | Admin | Approve / reject dokumen |
+
+### Inventory — Suku Cadang (Admin)
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/admin/parts` | Admin | List suku cadang (filter: kategori, status, search) |
+| GET | `/api/admin/parts/low-stock` | Admin | Part di bawah batas minimum stok |
+| GET | `/api/admin/parts/{id}` | Admin | Detail part + riwayat stok |
+| POST | `/api/admin/parts` | Admin | Tambah suku cadang baru |
+| PUT | `/api/admin/parts/{id}` | Admin | Update data suku cadang |
+| DELETE | `/api/admin/parts/{id}` | Admin | Hapus suku cadang |
+| POST | `/api/admin/parts/{id}/restock` | Admin | Tambah stok masuk |
+| POST | `/api/admin/vehicle-specs` | Admin | Tambah master spesifikasi kendaraan |
+| PUT | `/api/admin/vehicle-specs/{id}/parts` | Admin | Sync part kompatibel ke spec kendaraan |
 
 ---
 
@@ -212,8 +251,8 @@ Token didapat setelah berhasil login melalui `POST /api/login`.
 | Role | Akses |
 |------|-------|
 | **Public** | GET services, schedules, reviews |
-| **User** | Semua public + kelola vehicles, bookings, reviews |
-| **Admin** | Semua user + CRUD services & schedules + kelola semua booking |
+| **User** | Semua public + kelola vehicles & dokumen, bookings, reviews |
+| **Admin** | Semua user + CRUD services & schedules + kelola booking + verifikasi dokumen + inventory |
 
 ---
 
@@ -236,15 +275,15 @@ API sudah ditest menggunakan **Postman** dengan **25 skenario** — semua lulus 
 backend/
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/Api/    # AuthController, ServiceController, dst.
+│   │   ├── Controllers/Api/    # AuthController, BookingController, InventoryController, dst.
 │   │   ├── Middleware/         # RoleMiddleware
 │   │   └── Requests/           # Form Request Validation
-│   └── Models/                 # Eloquent Models
+│   └── Models/                 # Eloquent Models (13 model)
 ├── database/
-│   ├── migrations/             # 8 file migration
+│   ├── migrations/             # 13 file migration
 │   └── seeders/                # UserSeeder, ServiceSeeder, ScheduleSeeder
 └── routes/
-    └── api.php                 # 33 API routes
+    └── api.php                 # 48 API routes
 ```
 
 ---
