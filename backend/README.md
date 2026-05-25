@@ -54,7 +54,7 @@
 | `reviews` | Review pelanggan setelah servis selesai |
 | `parts` | Master data suku cadang (inventory) |
 | `vehicle_specs` | Spesifikasi kendaraan untuk kompatibilitas suku cadang |
-| `part_vehicle_specs` | Relasi many-to-many part ↔ vehicle_specs |
+| `part_vehicle_specs` | Relasi many-to-many part <-> vehicle_specs |
 | `stock_movements` | Audit trail pergerakan stok masuk/keluar |
 | `part_usages` | Detail suku cadang yang dipakai per booking |
 
@@ -258,14 +258,16 @@ Token didapat setelah berhasil login melalui `POST /api/login`.
 
 ## ✅ Testing
 
-API sudah ditest menggunakan **Postman** dengan **25 skenario** — semua lulus 100%.
+API sudah ditest menggunakan **Postman** dengan **55 skenario** — semua lulus 100%.
 
 | Kategori | Skenario |
 |----------|----------|
-| Auth & User Flow | Register, Login, Me, Logout |
-| CRUD & Business Logic | Create booking + GBX-code auto-generate |
-| Slot Validation | Booking jadwal penuh → 422 |
-| Security | User akses admin → 403, Review duplikat → 422 |
+| Auth & User Flow | Register, Login, Me, Logout, negative test |
+| CRUD Kendaraan | Tambah, detail, update, hapus, negative duplikat plat |
+| Verifikasi Dokumen | Upload, admin approve/reject, is_verified otomatis |
+| Booking Lifecycle | Pending -> confirmed -> in_progress -> completed |
+| Inventory & Stok | Create part, restock, record usage, sync stok otomatis |
+| Security | User akses admin -> 403, akses tanpa token -> 401 |
 
 ---
 
