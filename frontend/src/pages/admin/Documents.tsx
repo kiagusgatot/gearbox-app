@@ -176,7 +176,10 @@ export default function AdminDocuments() {
 
       <Modal open={previewOpen} onClose={closePreview} title={previewDoc ? `Preview Dokumen: ${TL[previewDoc.type]} - ${previewDoc.file_name}` : 'Preview Dokumen'} width={800}>
         {previewDoc && (() => {
-          const fileUrl = `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${previewDoc.file_path}`
+          const BASE_URL =
+            (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') ??
+            'http://localhost:8000'
+          const fileUrl = `${BASE_URL}/storage/${previewDoc.file_path}`
           const isPdf = previewDoc.file_path.toLowerCase().endsWith('.pdf') || previewDoc.file_name.toLowerCase().endsWith('.pdf')
 
           return (
