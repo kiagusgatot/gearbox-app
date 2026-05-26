@@ -13,21 +13,10 @@ class VehicleDocument extends Model
         'file_name',
         'status',
         'notes',
-        'verified_by',
-        'verified_at',
-    ];
-
-    protected $casts = [
-        'verified_at' => 'datetime',
     ];
 
     public function vehicle()
     {
-        return $this->belongsTo(Vehicle::class);
-    }
-
-    public function verifier()
-    {
-        return $this->belongsTo(User::class, 'verified_by');
+        return $this->belongsTo(Vehicle::class)->with('user');
     }
 }

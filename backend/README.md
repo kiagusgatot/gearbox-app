@@ -2,23 +2,26 @@
 
 > REST API untuk Sistem Booking & Manajemen Layanan Bengkel Mobil
 
-[![Laravel](https://img.shields.io/badge/Laravel-13.11.1-FF2D20?style=flat&logo=laravel)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat&logo=php)](https://php.net)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql)](https://mysql.com)
-[![Sanctum](https://img.shields.io/badge/Sanctum-4.3.2-FF2D20?style=flat)](https://laravel.com/docs/sanctum)
+[![Sanctum](https://img.shields.io/badge/Sanctum-Auth-FF2D20?style=flat)](https://laravel.com/docs/sanctum)
+[![Reverb](https://img.shields.io/badge/Reverb-WebSocket-6366F1?style=flat)](https://reverb.laravel.com)
 
 ---
 
 ## 📋 Deskripsi
 
-**Gearbox** adalah sistem booking dan manajemen layanan bengkel mobil berbasis web. Backend ini menyediakan REST API yang digunakan oleh aplikasi frontend untuk:
+**Gearbox** adalah sistem booking dan manajemen layanan bengkel mobil berbasis web. Backend ini menyediakan REST API dan WebSocket real-time yang digunakan oleh aplikasi frontend untuk:
 
-- Mengelola layanan bengkel (jenis servis, harga, durasi)
-- Mengatur jadwal ketersediaan layanan
-- Memproses booking dari pelanggan
-- Tracking status servis secara real-time
-- Manajemen kendaraan pelanggan beserta verifikasi dokumen (plat nomor / STNK)
-- Manajemen inventory suku cadang dan sinkronisasi stok otomatis
+- Autentikasi berbasis token dengan role `admin` / `user`
+- Manajemen layanan bengkel (kategori, harga, durasi)
+- Sistem antrian otomatis dengan 6 bay dan nomor antrian `GBX-DDMMYY-001`
+- Booking multi-layanan per sesi dengan kalkulasi durasi & harga otomatis
+- Tracking status servis real-time via WebSocket (Laravel Reverb)
+- Manajemen kendaraan & verifikasi dokumen (STNK, KIR, Plat Nomor)
+- Inventory suku cadang dengan alert low stock
+- Monitor antrian harian per bay
 
 ---
 
@@ -26,62 +29,84 @@
 
 | Teknologi | Versi | Kegunaan |
 |-----------|-------|----------|
-| Laravel | 13.11.1 | PHP Framework |
+| Laravel | 13 | PHP Framework |
 | PHP | 8.4 | Backend Language |
 | MySQL | 8.0 | Database |
-| Laravel Sanctum | 4.3.2 | API Authentication |
-| L5-Swagger | latest | API Documentation |
+| Laravel Sanctum | 4.x | Token Authentication |
+| Laravel Reverb | 1.x | WebSocket Server |
+| Laravel Queue | — | Async Job Processing |
 
 ---
 
-## 🗄️ Database Design
-
-### ERD
-
-🔗 **[Lihat ERD di dbdiagram.io](https://dbdiagram.io/d/GEARBOX-ERD-69a2a47da3f0aa31e16030a4)**
+## 🗄️ Database
 
 ### Tabel
 
 | Tabel | Deskripsi |
 |-------|-----------|
-| `users` | Data user dengan role admin/user |
-| `vehicles` | Kendaraan milik user beserta status verifikasi |
-| `vehicle_documents` | Dokumen kendaraan (plat nomor, STNK, KIR) untuk verifikasi |
-| `services` | Jenis layanan bengkel |
-| `service_schedules` | Jadwal ketersediaan layanan |
-| `bookings` | Data booking pelanggan |
-| `booking_status_histories` | Audit trail perubahan status booking |
+| `users` | Data user dengan role `admin` / `user` |
+| `vehicles` | Kendaraan milik user, field `is_verified` |
+| `vehicle_documents` | Dokumen kendaraan (plat_nomor, stnk, kir) |
+| `services` | Jenis layanan bengkel (nama, kategori, harga, durasi) |
+| `service_schedules` | Jadwal ketersediaan layanan (legacy) |
+| `bookings` | Data booking dengan `booking_date`, `queue_number`, `bay_number` |
+| `booking_services` | Pivot multi-layanan per booking |
+| `booking_status_histories` | Audit trail perubahan status |
 | `reviews` | Review pelanggan setelah servis selesai |
-| `parts` | Master data suku cadang (inventory) |
-| `vehicle_specs` | Spesifikasi kendaraan untuk kompatibilitas suku cadang |
-| `part_vehicle_specs` | Relasi many-to-many part <-> vehicle_specs |
-| `stock_movements` | Audit trail pergerakan stok masuk/keluar |
-| `part_usages` | Detail suku cadang yang dipakai per booking |
+| `parts` | Inventory suku cadang dengan SKU & min stock |
+| `stock_movements` | Riwayat perubahan stok |
+| `part_usages` | Pemakaian suku cadang per booking |
+| `personal_access_tokens` | Token Sanctum |
 
 ### Key Design Decisions
-- **Composite unique key** pada `service_schedules` — mencegah jadwal duplikat
-- **cascadeOnDelete** pada semua Foreign Key
-- **booking_code** auto-generate format `GBX-XXXXXXXX`
-- **booking_status_histories** — audit trail lengkap setiap perubahan status
-- **vehicle_documents** — verifikasi dokumen oleh admin sebelum kendaraan dinyatakan valid
-- **stock_movements** — audit trail lengkap setiap pergerakan stok (restock, usage, correction)
-- **part_usages** — snapshot harga suku cadang saat dipakai agar tidak terpengaruh perubahan harga di masa depan
+- **`booking_date`** — field eksplisit untuk tanggal booking (bukan `created_at`) agar timezone-safe
+- **`queue_number`** — format `GBX-DDMMYY-001`, di-generate otomatis saat booking dibuat
+- **`bay_number`** + **`estimated_start`** / **`estimated_end`** — dihitung otomatis oleh `findEarliestSlot()`
+- **`booking_services`** — pivot agar satu booking bisa mencakup banyak layanan sekaligus
+- **Cascade delete** pada semua foreign key
 
 ---
 
-## 🚀 Cara Menjalankan
+## ⚙️ Sistem Antrian
+
+| Parameter | Nilai |
+|-----------|-------|
+| Jam operasional | 09:00 – 18:00 |
+| Batas booking | 14:00 |
+| Jumlah bay | 6 |
+| Format nomor antrian | `GBX-DDMMYY-001` |
+| Kapasitas maks | ~36 kendaraan/hari |
+
+Logika antrian ada di `App\Models\Booking`:
+- `findEarliestSlot($date, $duration)` — cari bay & jam paling awal tersedia
+- `getDailyCapacity($date)` — hitung kapasitas & penggunaan per tanggal
+- `generateQueueNumber($date)` — generate nomor antrian format `GBX-DDMMYY-XXX`
+
+---
+
+## 📡 WebSocket Events
+
+| Event | Channel | Trigger |
+|-------|---------|---------|
+| `NewBookingCreated` | `private-admin.bookings` | Booking baru masuk |
+| `BookingStatusUpdated` | `private-user.{id}` + `private-admin.bookings` | Status booking berubah |
+| `QueueUpdated` | `queue.{date}` | Perubahan kapasitas antrian |
+
+---
+
+## 🚀 Instalasi & Setup
 
 ### Prasyarat
 - PHP >= 8.2
 - Composer
-- MySQL
-- XAMPP / Laragon (untuk development lokal)
+- MySQL 8.0
+- Node.js (untuk Laravel Reverb)
 
 ### Langkah Instalasi
 
 ```bash
-# 1. Masuk ke folder backend (dari root monorepo)
-cd backend
+# 1. Masuk ke folder backend
+cd gearbox-app/backend
 
 # 2. Install dependencies
 composer install
@@ -93,11 +118,12 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### Konfigurasi Database
-
-Edit file `.env` dan sesuaikan konfigurasi database:
+### Konfigurasi `.env`
 
 ```env
+APP_NAME=Gearbox
+APP_URL=http://localhost:8000
+
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -106,47 +132,150 @@ DB_USERNAME=root
 DB_PASSWORD=
 
 SESSION_DRIVER=file
+QUEUE_CONNECTION=database
+
+# Sanctum
+SANCTUM_STATEFUL_DOMAINS=localhost:5173
+
+# Reverb WebSocket
+REVERB_APP_ID=gearbox
+REVERB_APP_KEY=gearbox-key
+REVERB_APP_SECRET=gearbox-secret
+REVERB_HOST=localhost
+REVERB_PORT=8080
+REVERB_SCHEME=http
+
+BROADCAST_CONNECTION=reverb
 ```
 
-### Jalankan Migration & Seeder
+### Migration & Seeder
 
 ```bash
-# Buat database gearbox_db di MySQL terlebih dahulu, lalu:
-php artisan migrate --seed
+# Buat database gearbox_db di MySQL, lalu:
+php artisan migrate
+
+# Seed data awal (users, services, schedules)
+php artisan db:seed
+
+# Seed suku cadang inventory (42 item)
+php artisan db:seed --class=PartSeeder
 ```
 
-### Setup Storage (untuk upload dokumen)
+### Menjalankan Server
+
+Butuh **4 terminal** berjalan bersamaan:
 
 ```bash
-php artisan storage:link
-```
-
-### Jalankan Server
-
-```bash
+# Terminal 1 — Laravel API server
 php artisan serve
-# Server berjalan di http://127.0.0.1:8000
+
+# Terminal 2 — WebSocket server (Reverb)
+php artisan reverb:start
+
+# Terminal 3 — Queue worker
+php artisan queue:work
+
+# Terminal 4 — Frontend (dari folder frontend)
+npm run dev
 ```
 
 ---
 
-## 📚 API Documentation
+## 🔌 API Endpoints
 
-Setelah server berjalan, akses **Swagger UI** di:
+### Auth
 
-```
-http://127.0.0.1:8000/api/documentation
-```
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| POST | `/api/register` | — | Register user baru |
+| POST | `/api/login` | — | Login & dapat token |
+| POST | `/api/logout` | Token | Logout |
+| GET | `/api/me` | Token | Data user yang login |
 
-Untuk generate ulang dokumentasi:
+### Services
 
-```bash
-php artisan l5-swagger:generate
-```
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/services` | — | List semua layanan |
+| GET | `/api/services/{id}` | — | Detail layanan |
+| POST | `/api/admin/services` | Admin | Tambah layanan |
+| PUT | `/api/admin/services/{id}` | Admin | Update layanan |
+| DELETE | `/api/admin/services/{id}` | Admin | Hapus layanan |
+
+### Vehicles & Documents
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/vehicles` | Token | List kendaraan milik user |
+| POST | `/api/vehicles` | Token | Tambah kendaraan |
+| PUT | `/api/vehicles/{id}` | Token | Update kendaraan |
+| DELETE | `/api/vehicles/{id}` | Token | Hapus kendaraan |
+| GET | `/api/vehicles/{id}/documents` | Token | List dokumen kendaraan |
+| POST | `/api/vehicles/{id}/documents` | Token | Upload dokumen |
+| GET | `/api/admin/documents` | Admin | Semua dokumen (filter by status) |
+| PUT | `/api/admin/documents/{id}/verify` | Admin | Approve / tolak dokumen |
+
+### Bookings
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/bookings/availability` | Token | Cek ketersediaan slot |
+| GET | `/api/bookings/calendar` | Token | Data kalender per range tanggal |
+| GET | `/api/bookings` | Token | Riwayat booking user |
+| GET | `/api/bookings/{id}` | Token | Detail booking |
+| POST | `/api/bookings` | Token | Buat booking (multi-layanan) |
+| PUT | `/api/bookings/{id}/cancel` | Token | Batalkan booking |
+| GET | `/api/admin/bookings` | Admin | Semua booking (filter status + date) |
+| PUT | `/api/admin/bookings/{id}/status` | Admin | Update status booking |
+
+### Queue Monitor
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/admin/queue` | Admin | Monitor antrian harian per bay |
+
+### Inventory (Parts)
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/admin/parts` | Admin | List semua suku cadang |
+| GET | `/api/admin/parts/low-stock` | Admin | List suku cadang stok rendah |
+| POST | `/api/admin/parts` | Admin | Tambah suku cadang |
+| PUT | `/api/admin/parts/{id}` | Admin | Update suku cadang |
+| DELETE | `/api/admin/parts/{id}` | Admin | Hapus suku cadang |
+| POST | `/api/admin/parts/{id}/restock` | Admin | Tambah stok |
+
+### Customers & Reviews
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| GET | `/api/admin/customers` | Admin | List pelanggan (search) |
+| GET | `/api/admin/customers/{id}` | Admin | Detail pelanggan + kendaraan + booking |
+| GET | `/api/reviews` | — | List review |
+| POST | `/api/reviews` | Token | Buat review |
+| DELETE | `/api/admin/reviews/{id}` | Admin | Hapus review |
 
 ---
 
-## 👥 Default Accounts (Setelah Seeding)
+## 🔐 Autentikasi
+
+API menggunakan **Laravel Sanctum** dengan Bearer Token:
+
+```
+Authorization: Bearer {token}
+```
+
+### Role-based Access
+
+| Role | Akses |
+|------|-------|
+| **Public** | GET services, schedules, reviews |
+| **User** | Public + kelola vehicles, documents, bookings, reviews |
+| **Admin** | User + semua endpoint `/api/admin/*` |
+
+---
+
+## 👥 Akun Default (Setelah Seeder)
 
 | Email | Password | Role |
 |-------|----------|------|
@@ -156,136 +285,26 @@ php artisan l5-swagger:generate
 
 ---
 
-## 🔌 API Endpoints
-
-### Auth
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| POST | `/api/register` | — | Register user baru |
-| POST | `/api/login` | — | Login & mendapat token |
-| POST | `/api/logout` | Token | Logout |
-| GET | `/api/me` | Token | Data user yang login |
-
-### Services
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/services` | — | List semua layanan |
-| GET | `/api/services/{id}` | — | Detail layanan |
-| POST | `/api/admin/services` | Admin | Tambah layanan |
-| PUT | `/api/admin/services/{id}` | Admin | Update layanan |
-| DELETE | `/api/admin/services/{id}` | Admin | Hapus layanan |
-
-### Schedules
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/schedules` | — | List jadwal (filter: service_id, date, is_available) |
-| GET | `/api/schedules/{id}` | — | Detail jadwal |
-| POST | `/api/admin/schedules` | Admin | Tambah jadwal |
-| PUT | `/api/admin/schedules/{id}` | Admin | Update jadwal |
-| DELETE | `/api/admin/schedules/{id}` | Admin | Hapus jadwal |
-
-### Vehicles
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/vehicles` | Token | List kendaraan milik user |
-| GET | `/api/vehicles/{id}` | Token | Detail kendaraan beserta dokumen |
-| POST | `/api/vehicles` | Token | Tambah kendaraan |
-| PUT | `/api/vehicles/{id}` | Token | Update kendaraan |
-| DELETE | `/api/vehicles/{id}` | Token | Hapus kendaraan |
-| POST | `/api/vehicles/{id}/documents` | Token | Upload dokumen (plat nomor / STNK / KIR) |
-| GET | `/api/vehicles/{id}/documents` | Token | Lihat status verifikasi dokumen |
-| GET | `/api/vehicles/{id}/compatible-parts` | Token | Part yang kompatibel dengan kendaraan |
-
-### Bookings
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/bookings` | Token | Riwayat booking user |
-| GET | `/api/bookings/{id}` | Token | Detail booking + status history |
-| POST | `/api/bookings` | Token | Buat booking baru |
-| PUT | `/api/bookings/{id}/cancel` | Token | Batalkan booking |
-| GET | `/api/admin/bookings` | Admin | Semua booking |
-| PUT | `/api/admin/bookings/{id}/status` | Admin | Update status booking |
-| POST | `/api/admin/bookings/{id}/parts` | Admin | Catat pemakaian suku cadang + sync stok |
-
-### Reviews
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/reviews` | — | List review (filter: service_id) |
-| POST | `/api/reviews` | Token | Buat review (booking harus completed) |
-| DELETE | `/api/admin/reviews/{id}` | Admin | Hapus review |
-
-### Verifikasi Dokumen (Admin)
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/admin/vehicles/search` | Admin | Cari kendaraan by plat nomor |
-| GET | `/api/admin/documents` | Admin | List semua dokumen (filter: status) |
-| PUT | `/api/admin/documents/{id}/verify` | Admin | Approve / reject dokumen |
-
-### Inventory — Suku Cadang (Admin)
-| Method | Endpoint | Auth | Deskripsi |
-|--------|----------|------|-----------|
-| GET | `/api/admin/parts` | Admin | List suku cadang (filter: kategori, status, search) |
-| GET | `/api/admin/parts/low-stock` | Admin | Part di bawah batas minimum stok |
-| GET | `/api/admin/parts/{id}` | Admin | Detail part + riwayat stok |
-| POST | `/api/admin/parts` | Admin | Tambah suku cadang baru |
-| PUT | `/api/admin/parts/{id}` | Admin | Update data suku cadang |
-| DELETE | `/api/admin/parts/{id}` | Admin | Hapus suku cadang |
-| POST | `/api/admin/parts/{id}/restock` | Admin | Tambah stok masuk |
-| POST | `/api/admin/vehicle-specs` | Admin | Tambah master spesifikasi kendaraan |
-| PUT | `/api/admin/vehicle-specs/{id}/parts` | Admin | Sync part kompatibel ke spec kendaraan |
-
----
-
-## 🔐 Authentication
-
-API menggunakan **Laravel Sanctum** dengan Bearer Token.
-
-```
-Authorization: Bearer {token}
-```
-
-Token didapat setelah berhasil login melalui `POST /api/login`.
-
-### Role-based Access
-
-| Role | Akses |
-|------|-------|
-| **Public** | GET services, schedules, reviews |
-| **User** | Semua public + kelola vehicles & dokumen, bookings, reviews |
-| **Admin** | Semua user + CRUD services & schedules + kelola booking + verifikasi dokumen + inventory |
-
----
-
-## ✅ Testing
-
-API sudah ditest menggunakan **Postman** dengan **55 skenario** — semua lulus 100%.
-
-| Kategori | Skenario |
-|----------|----------|
-| Auth & User Flow | Register, Login, Me, Logout, negative test |
-| CRUD Kendaraan | Tambah, detail, update, hapus, negative duplikat plat |
-| Verifikasi Dokumen | Upload, admin approve/reject, is_verified otomatis |
-| Booking Lifecycle | Pending -> confirmed -> in_progress -> completed |
-| Inventory & Stok | Create part, restock, record usage, sync stok otomatis |
-| Security | User akses admin -> 403, akses tanpa token -> 401 |
-
----
-
 ## 📁 Struktur Project
 
 ```
 backend/
 ├── app/
+│   ├── Events/                    # NewBookingCreated, BookingStatusUpdated, QueueUpdated
 │   ├── Http/
-│   │   ├── Controllers/Api/    # AuthController, BookingController, InventoryController, dst.
-│   │   ├── Middleware/         # RoleMiddleware
-│   │   └── Requests/           # Form Request Validation
-│   └── Models/                 # Eloquent Models (13 model)
+│   │   ├── Controllers/Api/       # AuthController, BookingController, PartController, dst.
+│   │   └── Middleware/            # RoleMiddleware
+│   └── Models/                    # Booking (queue logic), Vehicle, Part, dst.
+├── bootstrap/
+│   └── app.php                    # Daftarkan channels.php untuk broadcasting
+├── config/
+│   └── cors.php                   # Izinkan localhost:5173 + broadcasting/auth
 ├── database/
-│   ├── migrations/             # 13 file migration
-│   └── seeders/                # UserSeeder, ServiceSeeder, ScheduleSeeder
+│   ├── migrations/                # 12 file migration
+│   └── seeders/                   # UserSeeder, ServiceSeeder, PartSeeder
 └── routes/
-    └── api.php                 # 48 API routes
+    ├── api.php                    # Semua API routes
+    └── channels.php               # WebSocket channel authorization
 ```
 
 ---
