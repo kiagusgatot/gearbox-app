@@ -16,6 +16,18 @@ export default function AdminDocuments() {
   const [notes, setNotes]           = useState('')
   const [processing, setProcessing] = useState(false)
 
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewDoc, setPreviewDoc]   = useState<VehicleDocument | null>(null)
+
+  function openPreview(doc: VehicleDocument) {
+    setPreviewDoc(doc)
+    setPreviewOpen(true)
+  }
+  function closePreview() {
+    setPreviewOpen(false)
+    setPreviewDoc(null)
+  }
+
   async function load() {
     setIsLoading(true)
     vehicleService.adminListDocuments(filterStatus).then(r => setDocuments(r.data)).finally(() => setIsLoading(false))
@@ -96,14 +108,14 @@ export default function AdminDocuments() {
                     {doc.notes && <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3, fontStyle: 'italic' }}>Catatan: {doc.notes}</p>}
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
-                    <a
-                      href={`${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${doc.file_path}`}
-                      target="_blank" rel="noopener noreferrer"
+                    <button
+                      type="button"
                       className="btn-secondary"
-                      style={{ padding: '6px 14px', fontSize: 11, textDecoration: 'none' }}
+                      style={{ padding: '6px 14px', fontSize: 11 }}
+                      onClick={() => openPreview(doc)}
                     >
                       Lihat File
-                    </a>
+                    </button>
                     {doc.status === 'pending' && (
                       <>
                         <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 11 }} onClick={() => openModal(doc, 'verified')}>
@@ -156,6 +168,82 @@ export default function AdminDocuments() {
             </div>
           </form>
         )}
+      </Modal>
+
+      <Modal open={previewOpen} onClose={closePreview} title={previewDoc ? `Preview Dokumen: ${TL[previewDoc.type]} - ${previewDoc.file_name}` : 'Preview Dokumen'} width={800}>
+        {previewDoc && (() => {
+          const fileUrl = `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${previewDoc.file_path}`
+          const isPdf = previewDoc.file_path.toLowerCase().endsWith('.pdf') || previewDoc.file_name.toLowerCase().endsWith('.pdf')
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{
+                background: '#F9FAFB', borderRadius: 8, padding: '12px 14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                border: '1px solid #E5E7EB', flexWrap: 'wrap', gap: 8
+              }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 3 }}>
+                    Tipe Dokumen: {TL[previewDoc.type]}
+                  </p>
+                  <p style={{ fontSize: 11, color: '#6B7280' }}>
+                    Nama File: {previewDoc.file_name}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {previewDoc.status === 'pending' && (
+                    <>
+                      <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 11 }} onClick={() => { closePreview(); openModal(previewDoc, 'verified') }}>
+                        <CheckCircle size={13} /> Approve
+                      </button>
+                      <button className="btn-danger" style={{ padding: '6px 14px', fontSize: 11 }} onClick={() => { closePreview(); openModal(previewDoc, 'rejected') }}>
+                        <XCircle size={13} /> Tolak
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div style={{
+                background: '#F3F4F6', borderRadius: 10, padding: 8,
+                border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', minHeight: 350, overflow: 'hidden'
+              }}>
+                {isPdf ? (
+                  <iframe
+                    src={fileUrl}
+                    style={{ width: '100%', height: '550px', borderRadius: 6, border: 'none' }}
+                    title="PDF Document Preview"
+                  />
+                ) : (
+                  <img
+                    src={fileUrl}
+                    alt={previewDoc.file_name}
+                    style={{
+                      maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain',
+                      borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid #F3F4F6' }}>
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: 12, textDecoration: 'none' }}
+                >
+                  Buka di Tab Baru
+                </a>
+                <button type="button" className="btn-secondary" onClick={closePreview} style={{ padding: '8px 18px' }}>
+                  Tutup
+                </button>
+              </div>
+            </div>
+          )
+        })()}
       </Modal>
     </AdminLayout>
   )
