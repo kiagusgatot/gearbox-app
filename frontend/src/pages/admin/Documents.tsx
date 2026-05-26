@@ -18,9 +18,13 @@ export default function AdminDocuments() {
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewDoc, setPreviewDoc]   = useState<VehicleDocument | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(true)
+  const [previewError, setPreviewError]     = useState(false)
 
   function openPreview(doc: VehicleDocument) {
     setPreviewDoc(doc)
+    setPreviewLoading(true)
+    setPreviewError(false)
     setPreviewOpen(true)
   }
   function closePreview() {
@@ -206,20 +210,50 @@ export default function AdminDocuments() {
 
               <div style={{
                 background: '#F3F4F6', borderRadius: 10, padding: 8,
-                border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', minHeight: 350, overflow: 'hidden'
+                border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', minHeight: 350, overflow: 'hidden', position: 'relative'
               }}>
+                <style>{`
+                  @keyframes doc-preview-spin {
+                    to { transform: rotate(360deg); }
+                  }
+                `}</style>
+                {previewLoading && (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                    padding: '40px 20px', color: '#9CA3AF', fontSize: 13, fontWeight: 500
+                  }}>
+                    <div style={{
+                      width: 24, height: 24, border: '2px solid #E5E7EB',
+                      borderTop: '2px solid #E8B400', borderRadius: '50%',
+                      animation: 'doc-preview-spin 0.8s linear infinite'
+                    }} />
+                    <span>Memuat dokumen...</span>
+                  </div>
+                )}
+                {previewError && (
+                  <div style={{ padding: '40px 20px', color: '#DC2626', fontSize: 13, fontWeight: 500, textAlign: 'center' }}>
+                    Gagal memuat dokumen. Silakan coba buka di tab baru.
+                  </div>
+                )}
                 {isPdf ? (
                   <iframe
                     src={fileUrl}
-                    style={{ width: '100%', height: '550px', borderRadius: 6, border: 'none' }}
+                    onLoad={() => setPreviewLoading(false)}
+                    style={{
+                      display: previewLoading ? 'none' : 'block',
+                      width: '100%', height: '550px', borderRadius: 6, border: 'none'
+                    }}
                     title="PDF Document Preview"
                   />
                 ) : (
                   <img
                     src={fileUrl}
                     alt={previewDoc.file_name}
+                    onLoad={() => setPreviewLoading(false)}
+                    onError={() => { setPreviewLoading(false); setPreviewError(true); }}
                     style={{
+                      display: previewLoading || previewError ? 'none' : 'block',
                       maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain',
                       borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
