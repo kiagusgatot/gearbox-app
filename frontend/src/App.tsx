@@ -15,7 +15,7 @@ import AdminServices from './pages/admin/Services'
 import AdminSchedules from './pages/admin/Schedules'
 import AdminCustomers from './pages/admin/Customers'
 import AdminDocuments from './pages/admin/Documents'
-import AdminInventory from './pages/admin/Reports'
+import AdminInventory from './pages/admin/Inventory'
 
 function HomeRedirect() {
   const { user } = useAuth()

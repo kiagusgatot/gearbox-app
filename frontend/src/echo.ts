@@ -2,7 +2,7 @@ import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
 
 // Daftarkan Pusher ke window agar Laravel Echo bisa menemukannya
-window.Pusher = Pusher
+(window as any).Pusher = Pusher
 
 const BASE_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') ??

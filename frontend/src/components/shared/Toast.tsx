@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { CheckCircle, Info, AlertTriangle, X } from 'lucide-react'
 
 interface ToastItem {

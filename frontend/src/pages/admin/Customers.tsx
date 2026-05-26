@@ -39,7 +39,7 @@ export default function AdminCustomers() {
   const [debouncedSearch, setDebounced]   = useState('')
   const [selected, setSelected]           = useState<CustomerDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     clearTimeout(debounceRef.current)

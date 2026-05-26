@@ -48,7 +48,12 @@ export default function BookingCreate() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await bookingService.create({ service_id: +selService, schedule_id: +selSchedule, vehicle_id: +selVehicle, notes })
+      await bookingService.create({
+        vehicle_id: +selVehicle,
+        service_ids: [+selService],
+        date: cSch?.date || '',
+        notes
+      })
       setSuccess(true)
     } finally { setSubmitting(false) }
   }
